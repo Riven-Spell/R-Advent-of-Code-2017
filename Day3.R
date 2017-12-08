@@ -15,55 +15,49 @@ findSteps1 <- function(x = 1) {
 }
 
 # STEP 2
-# NEEDS FIXING
 findNext <- function(x = 747) {
-  m <- matrix(0,3,3)
+  cmdList <- list() # Format: x, y, #. Movement, number of times.
+  m <- matrix(0,3,3) #Will always have a 1 point gap between operating and outer area
   m[2,2] <- 1
   cursor <- c(2,2)
-  i <- 1
   root <- 1
-  perim <- findPerim(root)
-  actions <- list(
-    c(-1,0), # First quarter, move upwards
-    c(0,-1), # Second quarter, move left
-    c(1,0), # Third quarter, move downwards
-    c(0,1), # Final quarter, move right.
-    c(0,0) # sanity check
-  )
   
-  while(length(m[m <= x]) != 1) {
-    if(root^2 <= i) { # Iterated root squared times
-      ml <- length(m[1,]) # Get size of matrix
-      tmpm <- matrix(0,ml + 2,ml + 2) # Create matrix 2 larger
-      tmpm[2:(2+ml-1),2:(2+ml-1)] <- m # Place matrix in middle of temp matrix
-      m <- tmpm # Set matrix to temp matrix
-      cursor <- cursor + c(1,2) # Move cursor to old position + (x + 1)
-      root <- root + 2 # Iterate the root upwards one step.
-      perim <- findPerim(root)
+  while(length(m[m > x]) == 0) {
+    if(length(cmdList) == 0) {
+      root <- root + 2 # Update the root.
+      p <- findPerim(root) / 4 #Find the new perimiter for cmdlist
+      cmdList <- list( #Update all the commands
+        c(-1,0,p-1),
+        c(0,-1,p),
+        c(1,0,p),
+        c(0,1,p+1)
+      )
+      ml <- length(m[1,])
+      tmpm <- matrix(0,ml+2,ml+2)
+      tmpm[2:(2+ml-1),2:(2+ml-1)] <- m
+      m <- tmpm
+      cursor <- cursor + c(1,2)
+      if(root - 2 >= 3) {
+        cursor[2] <- cursor[2] - 1
+      }
     }
     
-    # Calculate & assign new block.
+    # Perform work at cursor location
     m[cursor[1],cursor[2]] <- sum(m[(cursor[1]-1):(cursor[1]+1),(cursor[2]-1):(cursor[2]+1)]) - m[cursor[1],cursor[2]]
-    # Move cursor.
-    lastroot <- root - 2 # determine last root to find current progression to next root
-    tmpi <- i - (lastroot^2) # determine progression to next root
-    perimq <- perim / 4 # perimiter into quarters
     
-    #debug
-    print(m)
-    print(cursor)
-    print("Action:")
-    print(actions[[((tmpi + 1) %/% perimq) + 1]])
-    print("Maximum:")
-    print(max(unlist(m)))
-    print("Iteration:")
-    print(i)
+    cursor[1:2] <- cursor[1:2] + cmdList[[1]][1:2] # Move cursor
     
-    
-    cursor <- cursor + actions[[(tmpi %/% perimq) + 1]] # mouse performs the closest 25% action.
-    i <- i + 1
+    cmdList[[1]][3] <- cmdList[[1]][3] - 1 #Increment cmdList
+    if(cmdList[[1]][3] <= 0) {
+      if(length(cmdList) != 1) {
+        cmdList <- cmdList[2:length(cmdList)]
+      } else {
+        cmdList <- list()
+      }
+    }
   }
-  m[m <= x]
+  
+  m[m > x]
 }
 
 findPerim <- function(x = 3) {
